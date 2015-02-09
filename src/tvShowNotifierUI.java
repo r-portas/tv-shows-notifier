@@ -1,8 +1,10 @@
 
 import java.util.ArrayList;
 import javax.swing.DefaultListModel;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -12,10 +14,12 @@ import javax.swing.event.ListSelectionListener;
 class TvShow{
     public String showname;
     public String showdesc;
-    TvShow(String name, String description){
+    public String showep;
+    TvShow(String name, String epname, String description){
         showname = name;
+        showep = epname;
         showdesc = description;
-        System.out.println(showname + " " + showdesc);
+        System.out.println(showname + " - " + epname);
         }
     }
 
@@ -24,7 +28,9 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     
     ArrayList<TvShow> shows;
     
-    DefaultListModel lModel;
+    DefaultTableModel tModel;
+    ListSelectionModel lsModel;
+            
     
     /**
      * Creates new form tvShowNotifierUI
@@ -46,16 +52,14 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jList1 = new javax.swing.JList();
         jLabel1 = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        jTable1 = new javax.swing.JTable();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
-
-        jScrollPane1.setViewportView(jList1);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("TV Show Notifier");
@@ -65,6 +69,24 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         jTextArea1.setColumns(20);
         jTextArea1.setRows(5);
         jScrollPane2.setViewportView(jTextArea1);
+
+        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Show Name", "Episode Name", "Airing"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane3.setViewportView(jTable1);
 
         jMenu1.setText("File");
 
@@ -84,17 +106,19 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jScrollPane2)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap(211, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 283, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 114, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -106,30 +130,34 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
         System.out.println("Refreshing tv show list");
-        //populateList();
-        addShow("Person of Interest", "10-02-2014", "Shoot people and shit");
-        addShow("Person of Interest", "10-02-2014", "Shoot people and shit");
+        populateList();
+        
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     void populateList(){
-        
+        tModel.setRowCount(0);
+        shows = new ArrayList<TvShow>();
+        addShow("Person of Interest", "Stuff1", "10-02-2014", "Show desc 1");
+        addShow("Person of Interest", "Stuff2", "10-02-2014", "Show desc 2");
     }
     
-    void searchList(String name){
+    void searchTvShows(String name, String epname){
         for (TvShow tv : shows){
-            if (tv.showname == name){
-                System.out.println(tv.showdesc);
-                jLabel1.setText(tv.showname);
+            if (tv.showname == name && tv.showep == epname){
+                jLabel1.setText(tv.showname + " - " + tv.showep);
                 jTextArea1.setText(tv.showdesc);
             }
         }
         
     }
     
-    void addShow(String showname, String airDate, String showdesc){
+    void addShow(String showname, String episodename, String airdate, String epdesc){
         //Calculate air date
-        lModel.addElement(showname);
-        shows.add(new TvShow(showname, showdesc));
+        shows.add(new TvShow(showname, episodename, epdesc));
+        
+        // Add to the jTable
+        String[] data = {showname, episodename, airdate}; 
+        tModel.addRow(data);
     }
     
     /**
@@ -168,26 +196,36 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     }
     
     void setup(){
-        lModel = new DefaultListModel();
-        jList1.setModel(lModel);
-        jList1.addListSelectionListener(new ListSelectionListener() {
+        
+        tModel = (DefaultTableModel) jTable1.getModel();
+        lsModel = jTable1.getSelectionModel();
+        
+        lsModel.addListSelectionListener(new ListSelectionListener() {
 
             @Override
-            public void valueChanged(ListSelectionEvent e) {
-               System.out.println(jList1.getSelectedValue());
-               searchList(jList1.getSelectedValue().toString());
+            public void valueChanged(ListSelectionEvent lse) {
+                
+                // Get the show name and episode,  used for searching the list
+                int row = jTable1.getSelectedRow();
+                if (row >= 0){
+                    String tShowname = jTable1.getValueAt(jTable1.getSelectedRow(), 0).toString();
+                    String tEpname = jTable1.getValueAt(jTable1.getSelectedRow(), 1).toString();
+                
+                    searchTvShows(tShowname, tEpname);
+                }
             }
         });
+        
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JList jList1;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JTable jTable1;
     private javax.swing.JTextArea jTextArea1;
     // End of variables declaration//GEN-END:variables
 }
