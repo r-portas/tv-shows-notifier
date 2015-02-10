@@ -1,20 +1,44 @@
 
 import java.util.ArrayList;
-import javax.swing.DefaultListModel;
+import org.json.simple.JSONObject;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 
+// Import other files
+import ConfigFile.ConfigFile;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import org.json.simple.JSONArray;
+
 /**
  *
- * @author roy
+ * @author Roy Portas
  */
+
+class TvSeries{
+    public String name;
+    public String showid;
+    
+    TvSeries(String n, String id){
+        name = n;
+        showid = id;
+    }
+ 
+    JSONObject generateJson(){
+        JSONObject temp = new JSONObject();
+        temp.put("name", name);
+        temp.put("showid", showid);
+        return temp;
+    }
+}
 
 class TvShow{
     public String showname;
     public String showdesc;
     public String showep;
+    
     TvShow(String name, String epname, String description){
         showname = name;
         showep = epname;
@@ -24,13 +48,16 @@ class TvShow{
     }
 
 
+
 public class tvShowNotifierUI extends javax.swing.JFrame {
     
     ArrayList<TvShow> shows;
+    ArrayList<TvSeries> series;
     
     DefaultTableModel tModel;
     ListSelectionModel lsModel;
-            
+    
+    ConfigFile cfile;
     
     /**
      * Creates new form tvShowNotifierUI
@@ -38,8 +65,11 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     public tvShowNotifierUI() {
         initComponents();
         
-        shows = new ArrayList<TvShow>();
-        jTextArea1.setEditable(false);
+        // Debug stuff
+        
+        //series.add(new TvSeries("Person of interest", "124"));
+        //series.add(new TvSeries("The Flash", "432"));
+        
         setup();
     }
 
@@ -60,6 +90,7 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
+        jMenuItem2 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("TV Show Notifier");
@@ -98,6 +129,14 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         });
         jMenu1.add(jMenuItem1);
 
+        jMenuItem2.setText("API key");
+        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem2ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem2);
+
         jMenuBar1.add(jMenu1);
 
         setJMenuBar(jMenuBar1);
@@ -134,6 +173,46 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
+    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+        // Set the API key
+        JFrame parent = new JFrame();
+        String newKey = (String) JOptionPane.showInputDialog(parent, 
+                "Enter API key for the TVDB",
+                null);
+        System.out.println(newKey);
+        int success = cfile.setApiKey(newKey);
+        if (success != 0){
+            JOptionPane.showMessageDialog(parent, "Error applying key, try again");
+        } else {
+            // It worked, save the file
+            cfile.saveConfig();
+            System.out.println("Saving file");
+        }
+    }//GEN-LAST:event_jMenuItem2ActionPerformed
+
+    void loadSeries(){
+        JSONArray temp = cfile.getTvShows();
+        for (Object j : temp){
+            JSONObject jo = (JSONObject) j;
+            series.add(new TvSeries(jo.get("name").toString(), 
+                    jo.get("showid").toString()));
+            
+        }
+        System.out.println(series);
+    }
+    
+    void saveSeries(){
+        JSONArray temp = new JSONArray();
+        for (TvSeries tv : series){
+            temp.add(tv.generateJson());
+        }
+        
+        // Save the file
+        cfile.setTvShows(temp);
+        cfile.saveConfig();
+        //System.out.println(temp);
+    }
+    
     void populateList(){
         tModel.setRowCount(0);
         shows = new ArrayList<TvShow>();
@@ -195,7 +274,25 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         });
     }
     
+    /**
+     * Sets up the UI and the backend
+     */        
     void setup(){
+        
+        // Set up the config file
+        cfile = new ConfigFile();
+
+        // Load the config file
+        cfile.loadConfig();
+        //System.out.println(cfile.getApiKey());
+        
+        shows = new ArrayList<TvShow>();
+        series = new ArrayList<TvSeries>();
+        
+        //saveSeries();
+        loadSeries();
+        
+        jTextArea1.setEditable(false);
         
         tModel = (DefaultTableModel) jTable1.getModel();
         lsModel = jTable1.getSelectionModel();
@@ -223,6 +320,7 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable jTable1;
