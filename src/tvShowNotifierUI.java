@@ -8,9 +8,24 @@ import javax.swing.table.DefaultTableModel;
 
 // Import other files
 import ConfigFile.ConfigFile;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 /**
  *
@@ -91,6 +106,8 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
         jMenuItem2 = new javax.swing.JMenuItem();
+        jMenu2 = new javax.swing.JMenu();
+        jMenuItem3 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("TV Show Notifier");
@@ -138,6 +155,18 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         jMenu1.add(jMenuItem2);
 
         jMenuBar1.add(jMenu1);
+
+        jMenu2.setText("TV Show");
+
+        jMenuItem3.setText("Add show");
+        jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem3ActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItem3);
+
+        jMenuBar1.add(jMenu2);
 
         setJMenuBar(jMenuBar1);
 
@@ -190,6 +219,19 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jMenuItem2ActionPerformed
 
+    
+    /**
+     * Add TV show
+     * @param evt 
+     */
+    private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
+        JFrame parent = new JFrame();
+        String showname = (String) JOptionPane.showInputDialog(parent,
+                "Enter show to search",
+                null);
+        searchShows(showname);
+    }//GEN-LAST:event_jMenuItem3ActionPerformed
+
     void loadSeries(){
         JSONArray temp = cfile.getTvShows();
         for (Object j : temp){
@@ -201,6 +243,68 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         System.out.println(series);
     }
     
+    /**
+     * Search for a show
+     * @param showname 
+     */
+    void searchShows(String showname){
+        try {
+            String newShowname = showname.replaceAll(" ", "%20");
+            URL url = new URL("http://thetvdb.com/api/GetSeries.php?seriesname=" + newShowname);
+            InputStream is = url.openStream();
+            String output = IOUtils.toString(is, "utf-8");
+            
+            //System.out.println(output);
+            is.close();
+            
+            // Parse the XML data
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(new InputSource(new ByteArrayInputStream(output.getBytes("utf-8"))));
+            
+            NodeList shows = doc.getElementsByTagName("Series");
+            
+            Map showDict = new HashMap();
+
+            
+            for (int i = 0; i < shows.getLength(); i++){
+                Node node = shows.item(i);
+                Element element = (Element) node;
+                String tshow = element.getElementsByTagName("SeriesName").item(0).getTextContent();
+                String tid = element.getElementsByTagName("seriesid").item(0).getTextContent();
+                //System.out.println(tshow + " " + tid);
+                showDict.put(tshow, tid);
+            }
+            Set<String> keyset = showDict.keySet();
+            String[] showDictNames = keyset.toArray(new String[keyset.size()]);
+            
+            String input = (String) JOptionPane.showInputDialog(null, "Choose show", "Shows",
+                    JOptionPane.QUESTION_MESSAGE, null,
+                    showDictNames, showDictNames[0]);
+            String showid = (String) showDict.get(input);
+            
+            // Check that the show is not already in the list
+            int contains = 0;
+            for (TvSeries tv : series){
+                if (tv.showid == showid){
+                    contains = 1;
+                }
+            }
+            if (contains == 0){
+                series.add(new TvSeries(input, showid));
+                saveSeries();
+            }
+            
+            
+        } catch (Exception e){
+            System.out.println("ERROR in searchShows: " + e.toString());
+        }
+                
+    }
+    
+    /**
+     * Save the TV Series information
+     */
     void saveSeries(){
         JSONArray temp = new JSONArray();
         for (TvSeries tv : series){
@@ -213,6 +317,9 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         //System.out.println(temp);
     }
     
+    /**
+     * Sets up the objects to store tv shows
+     */
     void populateList(){
         tModel.setRowCount(0);
         shows = new ArrayList<TvShow>();
@@ -220,6 +327,11 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         addShow("Person of Interest", "Stuff2", "10-02-2014", "Show desc 2");
     }
     
+    /**
+     *  Search for a tv show via params and sets the labels and text area
+     * @param name
+     * @param epname 
+     */
     void searchTvShows(String name, String epname){
         for (TvShow tv : shows){
             if (tv.showname == name && tv.showep == epname){
@@ -249,12 +361,15 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
         try {
+            /*
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
             }
+            */
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException ex) {
             java.util.logging.Logger.getLogger(tvShowNotifierUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
@@ -318,9 +433,11 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
     private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable jTable1;
