@@ -108,6 +108,8 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         jMenuItem2 = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMenuItem3 = new javax.swing.JMenuItem();
+        jMenuItem5 = new javax.swing.JMenuItem();
+        jMenuItem4 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("TV Show Notifier");
@@ -165,6 +167,22 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
             }
         });
         jMenu2.add(jMenuItem3);
+
+        jMenuItem5.setText("Remove show");
+        jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem5ActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItem5);
+
+        jMenuItem4.setText("Refresh show info");
+        jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem4ActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItem4);
 
         jMenuBar1.add(jMenu2);
 
@@ -232,7 +250,37 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         searchShows(showname);
     }//GEN-LAST:event_jMenuItem3ActionPerformed
 
+    private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
+        // Refresh the show info
+        ArrayList seriesid = new ArrayList();
+        for(TvSeries tv : series){
+            seriesid.add(tv.showid);
+        }
+        cfile.refreshFiles(seriesid);
+    }//GEN-LAST:event_jMenuItem4ActionPerformed
+
+    private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
+        // Remove the show
+        
+        // Generate a list of shows
+        Map shows = new HashMap();
+        for(TvSeries tv : series){
+            shows.put(tv.name, tv.showid);
+        }
+        Set<String> keyset = shows.keySet();
+        String[] names = keyset.toArray(new String[shows.size()]);
+        
+        // Show the popup
+        String selectedshow = (String) JOptionPane.showInputDialog(null, "Choose show", "Shows",
+                    JOptionPane.QUESTION_MESSAGE, null,
+                    names, names[0]);
+        
+        String sid = (String) shows.get(selectedshow);;
+        cfile.removeShow(sid);
+    }//GEN-LAST:event_jMenuItem5ActionPerformed
+
     void loadSeries(){
+        try {
         JSONArray temp = cfile.getTvShows();
         for (Object j : temp){
             JSONObject jo = (JSONObject) j;
@@ -241,6 +289,9 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
             
         }
         System.out.println(series);
+        } catch (Exception e) {
+            System.out.println("ERROR in file loadSeries: " + e.toString());
+        }
     }
     
     /**
@@ -285,14 +336,16 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
             
             // Check that the show is not already in the list
             int contains = 0;
-            for (TvSeries tv : series){
-                if (tv.showid == showid){
+            for (TvSeries tv : series){  
+                if (tv.showid.equals(showid)){
                     contains = 1;
+                    System.out.println("Found duplicate");
                 }
             }
             if (contains == 0){
                 series.add(new TvSeries(input, showid));
                 saveSeries();
+                cfile.downloadFile(showid);
             }
             
             
@@ -438,6 +491,8 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
+    private javax.swing.JMenuItem jMenuItem4;
+    private javax.swing.JMenuItem jMenuItem5;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable jTable1;
