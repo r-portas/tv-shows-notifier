@@ -11,6 +11,7 @@ import ConfigFile.ConfigFile;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -49,16 +50,22 @@ class TvSeries{
     }
 }
 
-class TvShow{
+class TvShow implements Comparable<TvShow>{
     public String showname;
     public String showdesc;
     public String showep;
+    public int days;
     
-    TvShow(String name, String epname, String description){
+    public int compareTo(TvShow other){
+        return this.days - other.days;
+    }
+    
+    TvShow(String name, String epname, String description, String sdays){
         showname = name;
         showep = epname;
         showdesc = description;
-        System.out.println(showname + " - " + epname);
+        days = Integer.parseInt(sdays);
+        //System.out.println(showname + " - " + epname);
         }
     }
 
@@ -79,11 +86,6 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
      */
     public tvShowNotifierUI() {
         initComponents();
-        
-        // Debug stuff
-        
-        //series.add(new TvSeries("Person of interest", "124"));
-        //series.add(new TvSeries("The Flash", "432"));
         
         setup();
     }
@@ -277,6 +279,7 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         
         String sid = (String) shows.get(selectedshow);;
         cfile.removeShow(sid);
+        populateList();
     }//GEN-LAST:event_jMenuItem5ActionPerformed
 
     void loadSeries(){
@@ -333,7 +336,7 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
                     JOptionPane.QUESTION_MESSAGE, null,
                     showDictNames, showDictNames[0]);
             String showid = (String) showDict.get(input);
-            
+            System.out.println(showid);
             // Check that the show is not already in the list
             int contains = 0;
             for (TvSeries tv : series){  
@@ -343,16 +346,19 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
                 }
             }
             if (contains == 0){
-                series.add(new TvSeries(input, showid));
-                saveSeries();
-                cfile.downloadFile(showid);
+                if (showid != null){
+                    series.add(new TvSeries(input, showid));
+                    saveSeries();
+                    cfile.downloadFile(showid);
+                }
             }
             
+            populateList();
             
         } catch (Exception e){
             System.out.println("ERROR in searchShows: " + e.toString());
         }
-                
+         
     }
     
     /**
@@ -376,8 +382,25 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     void populateList(){
         tModel.setRowCount(0);
         shows = new ArrayList<TvShow>();
-        addShow("Person of Interest", "Stuff1", "10-02-2014", "Show desc 1");
-        addShow("Person of Interest", "Stuff2", "10-02-2014", "Show desc 2");
+
+        
+        //addShow("Person of Interest", "Stuff1", "10-02-2014", "Show desc 1");
+        //addShow("Person of Interest", "Stuff2", "10-02-2014", "Show desc 2");
+        ArrayList data = cfile.getShowEpisodes();
+        for(int i = 0; i < data.size(); i++){
+            HashMap<String, String> hm = (HashMap) data.get(i);
+            shows.add(new TvShow(hm.get("showname"), hm.get("name"), hm.get("overview"), hm.get("daystill")));
+        }
+        
+        Collections.sort(shows);
+
+        
+        // Sort the list
+        for (int a = 0; a < shows.size(); a++){
+            TvShow show = shows.get(a); 
+            addShow(show.showname, show.showep, show.showdesc, String.valueOf(show.days + 2)); //This is the showing offset
+        }
+        
     }
     
     /**
@@ -395,12 +418,11 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         
     }
     
-    void addShow(String showname, String episodename, String airdate, String epdesc){
-        //Calculate air date
-        shows.add(new TvShow(showname, episodename, epdesc));
+    void addShow(String showname, String episodename, String epdesc, String air){
+        //shows.add(new TvShow(showname, episodename, epdesc));
         
         // Add to the jTable
-        String[] data = {showname, episodename, airdate}; 
+        String[] data = {showname, episodename, air}; 
         tModel.addRow(data);
     }
     
@@ -461,6 +483,7 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         loadSeries();
         
         jTextArea1.setEditable(false);
+        jTextArea1.setLineWrap(true);
         
         tModel = (DefaultTableModel) jTable1.getModel();
         lsModel = jTable1.getSelectionModel();
@@ -480,6 +503,8 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
                 }
             }
         });
+        
+        populateList();
         
     }
 
