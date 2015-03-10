@@ -39,6 +39,8 @@ public class ConfigFile {
     String filename = "config.json";
     public JSONObject json;
     
+    long timecheck = -4l;
+    
     FileDownloader fdownloader;
     
     public ConfigFile(){
@@ -156,11 +158,10 @@ public class ConfigFile {
                     Date air = df.parse(epDate);
                     long diff = air.getTime() - now.getTime();
                     Long days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+
                     hash.put("daystill", days.toString());
-                    
-                    Long zero = -1L;
-                    
-                    if (days > zero){
+                 
+                    if (days > timecheck){
                         showeps.add(hash);
                     }
                 }

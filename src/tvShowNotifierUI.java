@@ -79,6 +79,9 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     DefaultTableModel tModel;
     ListSelectionModel lsModel;
     
+    String today = "0";
+    String yesterday = "-1";
+    
     ConfigFile cfile;
     
     /**
@@ -104,6 +107,8 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         jTextArea1 = new javax.swing.JTextArea();
         jScrollPane3 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -194,23 +199,39 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jScrollPane2)
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE))
                 .addContainerGap())
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 287, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(25, 25, 25))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addGap(22, 22, 22)
+                    .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 287, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(317, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 283, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 265, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 114, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 108, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel2)
                 .addContainerGap())
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                    .addContainerGap(408, Short.MAX_VALUE)
+                    .addComponent(jLabel3)
+                    .addContainerGap()))
         );
 
         pack();
@@ -258,7 +279,14 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         for(TvSeries tv : series){
             seriesid.add(tv.showid);
         }
-        cfile.refreshFiles(seriesid);
+        
+        Thread thread = new Thread(){
+            public void run(){
+                cfile.refreshFiles(seriesid);
+            }
+        };
+        thread.start();
+        
     }//GEN-LAST:event_jMenuItem4ActionPerformed
 
     private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
@@ -420,6 +448,11 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
     
     void addShow(String showname, String episodename, String epdesc, String air){
         //shows.add(new TvShow(showname, episodename, epdesc));
+        if (air.compareTo(today) == 0){
+            air = "Today";
+        } else if (air.compareTo(yesterday) == 0){
+            air = "Yesterday";
+        }
         
         // Add to the jTable
         String[] data = {showname, episodename, air}; 
@@ -471,10 +504,17 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         
         // Set up the config file
         cfile = new ConfigFile();
-
+        
         // Load the config file
         cfile.loadConfig();
         //System.out.println(cfile.getApiKey());
+        
+        // Set the labels
+        if (cfile.getApiKey() != "null"){
+            jLabel3.setText("API key loaded");
+        } else {
+            jLabel3.setText("No API key");
+        }
         
         shows = new ArrayList<TvShow>();
         series = new ArrayList<TvSeries>();
@@ -505,11 +545,15 @@ public class tvShowNotifierUI extends javax.swing.JFrame {
         });
         
         populateList();
+        int noShows = series.size();
+        jLabel2.setText(String.valueOf(noShows) + " shows loaded");
         
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
